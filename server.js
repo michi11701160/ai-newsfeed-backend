@@ -9,6 +9,10 @@ import { callAnthropic } from './proxy.js';
 dotenv.config();
 
 const app = express();
+
+// Fix for Render.com: Trust proxy for X-Forwarded-For headers
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 3001;
 const API_KEY = process.env.ANTHROPIC_API_KEY;
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
@@ -91,6 +95,8 @@ app.post('/api/generate', async (req, res) => {
   const validation = validateRequest(req.body);
   
   if (!validation.valid) {
+    // Log what was rejected for debugging
+    console.error('Validation failed:', validation.error, 'Body:', JSON.stringify(req.body));
     return res.status(400).json(errorResponse(validation.error, 400));
   }
 
