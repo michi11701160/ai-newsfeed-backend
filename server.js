@@ -14,11 +14,11 @@ const app = express();
 app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3001;
-const API_KEY = process.env.ANTHROPIC_API_KEY;
+const API_KEY = process.env.GROQ_API_KEY || process.env.ANTHROPIC_API_KEY; // Support both
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
 
 if (!API_KEY) {
-  throw new Error('ANTHROPIC_API_KEY not found in environment variables');
+  throw new Error('GROQ_API_KEY or ANTHROPIC_API_KEY not found in environment variables');
 }
 
 // Fix #3: CORS validation - fail fast in production if not set

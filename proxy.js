@@ -3,17 +3,18 @@ export async function callAnthropic(apiKey, requestBody) {
   const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Using Groq API (free alternative to Anthropic)
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: requestBody.model || 'claude-haiku-4-5-20251001',
+        model: 'llama-3.3-70b-versatile', // Free Groq model
+        messages: [{ role: 'user', content: requestBody.prompt }],
         max_tokens: Math.min(requestBody.max_tokens || 1500, 2000),
-        messages: [{ role: 'user', content: requestBody.prompt }]
+        temperature: 0.7
       }),
       signal: controller.signal
     });
@@ -31,7 +32,22 @@ export async function callAnthropic(apiKey, requestBody) {
       throw error;
     }
 
-    return await response.json();
+    const data = await response.json();
+    
+    // Convert Groq response format to Anthropic-compatible format
+    return {
+      id: data.id,
+      type: 'message',
+      role: 'assistant',
+      content: [
+        {
+          type: 'text',
+          text: data.choices[0].message.content
+        }
+      ],
+      model: data.model,
+      stop_reason: data.choices[0].finish_reason
+    };
   } catch (error) {
     clearTimeout(timeoutId);
     if (error.name === 'AbortError') {
